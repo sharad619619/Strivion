@@ -337,6 +337,7 @@ export default function GraphVisualization({ analysis }: GraphVisualizationProps
     if (isDraggingRef.current && dragNodeRef.current) {
       dragNodeRef.current.x = mx + offsetRef.current.x;
       dragNodeRef.current.y = my + offsetRef.current.y;
+      needsRenderRef.current = true;
       return;
     }
 
@@ -345,6 +346,7 @@ export default function GraphVisualization({ analysis }: GraphVisualizationProps
         x: e.clientX - panStartRef.current.x,
         y: e.clientY - panStartRef.current.y,
       };
+      needsRenderRef.current = true;
       return;
     }
 
