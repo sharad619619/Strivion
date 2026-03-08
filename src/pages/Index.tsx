@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Shield, AlertTriangle, Moon, Sun, ArrowLeft } from "lucide-react";
+import logo from "@/assets/strivion-logo.png";
 import { useTheme } from "next-themes";
 import FileUpload from "@/components/FileUpload";
 import GraphVisualization from "@/components/GraphVisualization";
