@@ -4,14 +4,7 @@ import {
   RefreshCw, Search, Shield, Users, Zap, Layers, Plug,
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i: number) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.6, delay: i * 0.08, ease: "easeOut" },
-  }),
-};
+import { fadeUp } from "@/lib/animations";
 
 const features = [
   { icon: Activity, title: "Real-Time Monitoring", desc: "Analyze transaction streams as they happen with instant pattern detection." },

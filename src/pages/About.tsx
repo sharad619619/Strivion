@@ -1,14 +1,7 @@
 import { motion } from "framer-motion";
 import { Shield, Lightbulb, Eye, Heart } from "lucide-react";
 import Layout from "@/components/layout/Layout";
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i: number) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.6, delay: i * 0.1, ease: "easeOut" },
-  }),
-};
+import { fadeUp } from "@/lib/animations";
 
 const values = [
   { icon: Shield, title: "Security", desc: "Data protection is at the core of everything we build." },

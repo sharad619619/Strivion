@@ -17,15 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/layout/Layout";
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, delay: i * 0.1, ease: "easeOut" },
-  }),
-};
+import { fadeUp } from "@/lib/animations";
 
 const features = [
   { icon: Network, title: "Transaction Graph Analysis", desc: "Convert transaction data into network graphs to reveal relationships between accounts." },
