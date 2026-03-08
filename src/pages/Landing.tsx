@@ -155,7 +155,7 @@ export default function Landing() {
                 <Button size="lg" onClick={() => navigate("/analysis")} className="gap-2 text-sm glow-button">
                   Get Started <ArrowRight className="w-4 h-4" />
                 </Button>
-                <Button size="lg" variant="outline" onClick={() => scrollTo("features")} className="text-sm border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white">
+                <Button size="lg" variant="outline" onClick={() => scrollTo("features")} className="text-sm bg-transparent border-border text-foreground hover:bg-muted">
                   View Demo
                 </Button>
               </motion.div>
@@ -168,12 +168,12 @@ export default function Landing() {
               transition={{ duration: 0.7, delay: 0.3 }}
               className="relative"
             >
-              <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 backdrop-blur-sm shadow-2xl overflow-hidden">
-                <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-slate-700/50">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
-                  <span className="ml-3 text-[10px] text-slate-500 font-medium">Transaction Network — Live Analysis</span>
+              <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm shadow-2xl overflow-hidden">
+                <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-border/50">
+                  <div className="w-2.5 h-2.5 rounded-full bg-destructive/70" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-warning/70" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-safe/70" />
+                  <span className="ml-3 text-[10px] text-muted-foreground font-medium">Transaction Network — Live Analysis</span>
                 </div>
                 <div className="h-[380px]">
                   <HeroNetworkGraph />
