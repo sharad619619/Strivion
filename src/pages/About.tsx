@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Shield, Lightbulb, Eye, Heart } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { fadeUp } from "@/lib/animations";
+import founderPhoto from "@/assets/founder-photo.png";
 
 const values = [
   { icon: Shield, title: "Security", desc: "Data protection is at the core of everything we build." },
@@ -65,26 +66,25 @@ export default function About() {
             </div>
           </div>
 
-          {/* Team */}
+          {/* Founder */}
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} custom={0} variants={fadeUp}>
-            <p className="text-sm text-primary font-medium uppercase tracking-widest mb-3">Team</p>
-            <h2 className="text-3xl font-bold text-foreground mb-8">Built by Experts</h2>
-            <div className="grid sm:grid-cols-3 gap-6 max-w-3xl">
-              {[
-                { name: "Alex Chen", role: "Founder & CEO", desc: "Former Head of Financial Crime at a top-tier bank." },
-                { name: "Sarah Kim", role: "CTO", desc: "Graph algorithms researcher with 10+ years in fintech." },
-                { name: "Marcus Reed", role: "Head of Product", desc: "Built fraud detection systems for multiple unicorns." },
-              ].map((member, i) => (
-                <motion.div key={member.name} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={i} variants={fadeUp}
-                  className="panel rounded-xl p-6">
-                  <div className="w-14 h-14 rounded-full bg-accent flex items-center justify-center mb-4">
-                    <span className="text-lg font-bold text-primary">{member.name[0]}</span>
-                  </div>
-                  <h3 className="font-semibold text-foreground">{member.name}</h3>
-                  <p className="text-sm text-primary mb-2">{member.role}</p>
-                  <p className="text-xs text-muted-foreground">{member.desc}</p>
-                </motion.div>
-              ))}
+            <p className="text-sm text-primary font-medium uppercase tracking-widest mb-3">Founder</p>
+            <h2 className="text-3xl font-bold text-foreground mb-8">Built by Vision</h2>
+            <div className="panel rounded-xl p-8 max-w-3xl">
+              <div className="flex flex-col sm:flex-row gap-8 items-start">
+                <img
+                  src={founderPhoto}
+                  alt="Sharad Singh - Founder & CEO"
+                  className="w-28 h-28 rounded-full object-cover shrink-0 border-2 border-border"
+                />
+                <div>
+                  <h3 className="text-xl font-semibold text-foreground">Sharad Singh</h3>
+                  <p className="text-sm text-primary font-medium mb-4">Founder & CEO</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Sharad Singh is a visionary entrepreneur focused on solving real-world problems through technology. He has built multiple ventures and is passionate about developing next-generation financial intelligence tools. Through Strivion, he is pioneering graph-based financial forensics systems that help uncover hidden fraud networks and complex money-muling operations. His work focuses on combining data, AI, and graph analytics to build powerful investigation platforms for the future of financial security.
+                  </p>
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>
