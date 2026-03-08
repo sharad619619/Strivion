@@ -142,12 +142,12 @@ export default function Landing() {
                 Strivion
               </motion.p>
 
-              <motion.h1 initial="hidden" animate="visible" custom={1} variants={fadeUp} className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-tight leading-[1.08] mb-5 text-white">
+              <motion.h1 initial="hidden" animate="visible" custom={1} variants={fadeUp} className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-tight leading-[1.08] mb-5 text-foreground">
                 Uncover Hidden<br />
                 <span className="text-primary">Fraud Networks</span>
               </motion.h1>
 
-              <motion.p initial="hidden" animate="visible" custom={2} variants={fadeUp} className="text-base text-slate-400 font-medium leading-relaxed mb-8 max-w-md">
+              <motion.p initial="hidden" animate="visible" custom={2} variants={fadeUp} className="text-base text-muted-foreground font-medium leading-relaxed mb-8 max-w-md">
                 Graph-powered transaction analysis that detects money mule rings, layered transfers, and smurfing patterns in real time.
               </motion.p>
 
