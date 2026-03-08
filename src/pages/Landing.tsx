@@ -197,8 +197,8 @@ export default function Landing() {
                 { value: "99.7%", label: "Detection Accuracy" },
               ].map(({ value, label }) => (
                 <div key={label} className="text-center">
-                  <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{value}</div>
-                  <div className="text-[11px] sm:text-xs text-slate-500 font-medium mt-1 uppercase tracking-wider">{label}</div>
+                  <div className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">{value}</div>
+                  <div className="text-[11px] sm:text-xs text-muted-foreground font-medium mt-1 uppercase tracking-wider">{label}</div>
                 </div>
               ))}
             </div>
