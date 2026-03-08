@@ -46,6 +46,9 @@ export default function GraphVisualization({ analysis }: GraphVisualizationProps
   const scaleRef = useRef(1);
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0 });
+  const simulationStoppedRef = useRef(false);
+  const iterationRef = useRef(0);
+  const needsRenderRef = useRef(true);
 
   const isDark = theme === "dark";
 
@@ -65,6 +68,11 @@ export default function GraphVisualization({ analysis }: GraphVisualizationProps
     if (!canvas) return;
     const w = canvas.width;
     const h = canvas.height;
+
+    // Reset simulation state
+    simulationStoppedRef.current = false;
+    iterationRef.current = 0;
+    needsRenderRef.current = true;
 
     const nodeMap = new Map<string, SimNode>();
     analysis.nodes.forEach((n: AccountNode, i: number) => {
@@ -102,12 +110,111 @@ export default function GraphVisualization({ analysis }: GraphVisualizationProps
     edgesRef.current = uniqueEdges;
   }, [analysis]);
 
-  // Force simulation + render loop
-  useEffect(() => {
+  // Render function (no force computation)
+  const render = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    const nodes = nodesRef.current;
+    const edges = edgesRef.current;
+    const w = canvas.width;
+
+    const posMap = new Map<string, SimNode>();
+    for (const n of nodes) posMap.set(n.id, n);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.translate(panRef.current.x, panRef.current.y);
+    ctx.scale(scaleRef.current, scaleRef.current);
+
+    // Draw edges
+    for (const edge of edges) {
+      const a = posMap.get(edge.source);
+      const b = posMap.get(edge.target);
+      if (!a || !b) continue;
+
+      const aSusp = a.score >= 30;
+      const bSusp = b.score >= 30;
+
+      ctx.beginPath();
+      ctx.strokeStyle = aSusp && bSusp
+        ? (isDark ? "rgba(239, 68, 68, 0.35)" : "rgba(220, 38, 38, 0.4)")
+        : (isDark ? "rgba(148, 163, 184, 0.12)" : "rgba(100, 116, 139, 0.15)");
+      ctx.lineWidth = aSusp && bSusp ? 1.5 : 0.8;
+      ctx.moveTo(a.x, a.y);
+
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const r = getNodeRadius(b) + 2;
+      const ex = b.x - (dx / dist) * r;
+      const ey = b.y - (dy / dist) * r;
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+
+      const angle = Math.atan2(dy, dx);
+      const arrowLen = 6;
+      ctx.beginPath();
+      ctx.fillStyle = aSusp && bSusp
+        ? (isDark ? "rgba(239, 68, 68, 0.5)" : "rgba(220, 38, 38, 0.6)")
+        : (isDark ? "rgba(148, 163, 184, 0.2)" : "rgba(100, 116, 139, 0.25)");
+      ctx.moveTo(ex, ey);
+      ctx.lineTo(ex - arrowLen * Math.cos(angle - 0.4), ey - arrowLen * Math.sin(angle - 0.4));
+      ctx.lineTo(ex - arrowLen * Math.cos(angle + 0.4), ey - arrowLen * Math.sin(angle + 0.4));
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Draw nodes
+    for (const node of nodes) {
+      const r = getNodeRadius(node);
+      const color = getColor(node.score);
+      const isHovered = hoveredNode?.id === node.id;
+      const isSelected = selectedNode?.id === node.id;
+
+      if (node.score >= 30 || isHovered || isSelected) {
+        const glowR = r * (isHovered || isSelected ? 2.4 : 2);
+        const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glowR);
+        gradient.addColorStop(0, `${color}44`);
+        gradient.addColorStop(1, `${color}00`);
+        ctx.beginPath();
+        ctx.fillStyle = gradient;
+        ctx.arc(node.x, node.y, glowR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, isHovered || isSelected ? r + 2 : r, 0, Math.PI * 2);
+      const grad = ctx.createRadialGradient(node.x - r * 0.3, node.y - r * 0.3, 0, node.x, node.y, r);
+      grad.addColorStop(0, `${color}ee`);
+      grad.addColorStop(1, `${color}88`);
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.strokeStyle = isSelected ? "#fff" : `${color}cc`;
+      ctx.lineWidth = isSelected ? 2 : 1;
+      ctx.stroke();
+
+      if (r > 10 || isHovered || isSelected) {
+        ctx.fillStyle = isDark ? "rgba(226, 232, 240, 0.9)" : "rgba(15, 23, 42, 0.85)";
+        ctx.font = `${isHovered ? "bold " : ""}${Math.max(8, r * 0.7)}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const label = node.id.length > 10 ? node.id.slice(0, 8) + "…" : node.id;
+        ctx.fillText(label, node.x, node.y + r + 10);
+      }
+    }
+
+    ctx.restore();
+  }, [hoveredNode, selectedNode, isDark]);
+
+  // Force simulation + render loop
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const MAX_ITERATIONS = 300;
+    const ENERGY_THRESHOLD = 0.5;
 
     const simulate = () => {
       const nodes = nodesRef.current;
@@ -115,167 +222,96 @@ export default function GraphVisualization({ analysis }: GraphVisualizationProps
       const w = canvas.width;
       const h = canvas.height;
 
-      // Build position map
-      const posMap = new Map<string, SimNode>();
-      for (const n of nodes) posMap.set(n.id, n);
+      if (!simulationStoppedRef.current) {
+        iterationRef.current++;
 
-      // Forces
-      const repulsion = 1800;
-      const springLen = 80;
-      const springK = 0.04;
-      const damping = 0.7;
-      const centerK = 0.01;
+        const posMap = new Map<string, SimNode>();
+        for (const n of nodes) posMap.set(n.id, n);
 
-      // Apply forces
-      for (let i = 0; i < nodes.length; i++) {
-        const a = nodes[i];
-        if (dragNodeRef.current?.id === a.id) continue;
+        // Decay factor: reduce forces over time for faster convergence
+        const decay = Math.max(0.01, 1 - iterationRef.current / MAX_ITERATIONS);
+        const repulsion = 1800 * decay;
+        const springLen = 80;
+        const springK = 0.04 * decay;
+        const damping = 0.65;
+        const centerK = 0.01 * decay;
 
-        // Center gravity
-        a.vx += (w / 2 - a.x) * centerK;
-        a.vy += (h / 2 - a.y) * centerK;
+        // Apply forces
+        for (let i = 0; i < nodes.length; i++) {
+          const a = nodes[i];
+          if (dragNodeRef.current?.id === a.id) continue;
 
-        // Node repulsion
-        for (let j = i + 1; j < nodes.length; j++) {
-          const b = nodes[j];
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const dist2 = dx * dx + dy * dy + 1;
-          const dist = Math.sqrt(dist2);
-          const force = repulsion / dist2;
+          a.vx += (w / 2 - a.x) * centerK;
+          a.vy += (h / 2 - a.y) * centerK;
+
+          for (let j = i + 1; j < nodes.length; j++) {
+            const b = nodes[j];
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            const dist2 = dx * dx + dy * dy + 1;
+            const dist = Math.sqrt(dist2);
+            const force = repulsion / dist2;
+            const fx = (dx / dist) * force;
+            const fy = (dy / dist) * force;
+            a.vx += fx;
+            a.vy += fy;
+            b.vx -= fx;
+            b.vy -= fy;
+          }
+        }
+
+        for (const edge of edges) {
+          const a = posMap.get(edge.source);
+          const b = posMap.get(edge.target);
+          if (!a || !b) continue;
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const dist = Math.sqrt(dx * dx + dy * dy) + 0.001;
+          const force = (dist - springLen) * springK;
           const fx = (dx / dist) * force;
           const fy = (dy / dist) * force;
-          a.vx += fx;
-          a.vy += fy;
-          b.vx -= fx;
-          b.vy -= fy;
-        }
-      }
-
-      // Spring forces along edges
-      for (const edge of edges) {
-        const a = posMap.get(edge.source);
-        const b = posMap.get(edge.target);
-        if (!a || !b) continue;
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const dist = Math.sqrt(dx * dx + dy * dy) + 0.001;
-        const force = (dist - springLen) * springK;
-        const fx = (dx / dist) * force;
-        const fy = (dy / dist) * force;
-        if (dragNodeRef.current?.id !== a.id) { a.vx += fx; a.vy += fy; }
-        if (dragNodeRef.current?.id !== b.id) { b.vx -= fx; b.vy -= fy; }
-      }
-
-      // Integrate
-      for (const n of nodes) {
-        if (dragNodeRef.current?.id === n.id) continue;
-        n.vx *= damping;
-        n.vy *= damping;
-        n.x += n.vx;
-        n.y += n.vy;
-        // Bounds
-        n.x = Math.max(20, Math.min(w - 20, n.x));
-        n.y = Math.max(20, Math.min(h - 20, n.y));
-      }
-
-      // Render
-      ctx.clearRect(0, 0, w, h);
-      ctx.save();
-      ctx.translate(panRef.current.x, panRef.current.y);
-      ctx.scale(scaleRef.current, scaleRef.current);
-
-      // Draw edges
-      for (const edge of edges) {
-        const a = posMap.get(edge.source);
-        const b = posMap.get(edge.target);
-        if (!a || !b) continue;
-
-        const aSusp = a.score >= 30;
-        const bSusp = b.score >= 30;
-
-        ctx.beginPath();
-        ctx.strokeStyle = aSusp && bSusp
-          ? (isDark ? "rgba(239, 68, 68, 0.35)" : "rgba(220, 38, 38, 0.4)")
-          : (isDark ? "rgba(148, 163, 184, 0.12)" : "rgba(100, 116, 139, 0.15)");
-        ctx.lineWidth = aSusp && bSusp ? 1.5 : 0.8;
-        ctx.moveTo(a.x, a.y);
-
-        // Arrow
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const r = getNodeRadius(b) + 2;
-        const ex = b.x - (dx / dist) * r;
-        const ey = b.y - (dy / dist) * r;
-        ctx.lineTo(ex, ey);
-        ctx.stroke();
-
-        // Arrowhead
-        const angle = Math.atan2(dy, dx);
-        const arrowLen = 6;
-        ctx.beginPath();
-        ctx.fillStyle = aSusp && bSusp 
-          ? (isDark ? "rgba(239, 68, 68, 0.5)" : "rgba(220, 38, 38, 0.6)") 
-          : (isDark ? "rgba(148, 163, 184, 0.2)" : "rgba(100, 116, 139, 0.25)");
-        ctx.moveTo(ex, ey);
-        ctx.lineTo(ex - arrowLen * Math.cos(angle - 0.4), ey - arrowLen * Math.sin(angle - 0.4));
-        ctx.lineTo(ex - arrowLen * Math.cos(angle + 0.4), ey - arrowLen * Math.sin(angle + 0.4));
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      // Draw nodes
-      for (const node of nodes) {
-        const r = getNodeRadius(node);
-        const color = getColor(node.score);
-        const isHovered = hoveredNode?.id === node.id;
-        const isSelected = selectedNode?.id === node.id;
-
-        // Glow
-        if (node.score >= 30 || isHovered || isSelected) {
-          const glowR = r * (isHovered || isSelected ? 2.4 : 2);
-          const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glowR);
-          gradient.addColorStop(0, `${color}44`);
-          gradient.addColorStop(1, `${color}00`);
-          ctx.beginPath();
-          ctx.fillStyle = gradient;
-          ctx.arc(node.x, node.y, glowR, 0, Math.PI * 2);
-          ctx.fill();
+          if (dragNodeRef.current?.id !== a.id) { a.vx += fx; a.vy += fy; }
+          if (dragNodeRef.current?.id !== b.id) { b.vx -= fx; b.vy -= fy; }
         }
 
-        // Node circle
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, isHovered || isSelected ? r + 2 : r, 0, Math.PI * 2);
-
-        const grad = ctx.createRadialGradient(node.x - r * 0.3, node.y - r * 0.3, 0, node.x, node.y, r);
-        grad.addColorStop(0, `${color}ee`);
-        grad.addColorStop(1, `${color}88`);
-        ctx.fillStyle = grad;
-        ctx.fill();
-
-        ctx.strokeStyle = isSelected ? "#fff" : `${color}cc`;
-        ctx.lineWidth = isSelected ? 2 : 1;
-        ctx.stroke();
-
-        // Label for larger nodes or hovered
-        if (r > 10 || isHovered || isSelected) {
-          ctx.fillStyle = isDark ? "rgba(226, 232, 240, 0.9)" : "rgba(15, 23, 42, 0.85)";
-          ctx.font = `${isHovered ? "bold " : ""}${Math.max(8, r * 0.7)}px monospace`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          const label = node.id.length > 10 ? node.id.slice(0, 8) + "…" : node.id;
-          ctx.fillText(label, node.x, node.y + r + 10);
+        // Integrate and measure energy
+        let totalEnergy = 0;
+        for (const n of nodes) {
+          if (dragNodeRef.current?.id === n.id) continue;
+          n.vx *= damping;
+          n.vy *= damping;
+          n.x += n.vx;
+          n.y += n.vy;
+          n.x = Math.max(20, Math.min(w - 20, n.x));
+          n.y = Math.max(20, Math.min(h - 20, n.y));
+          totalEnergy += n.vx * n.vx + n.vy * n.vy;
         }
+
+        // Check stabilization
+        if (iterationRef.current >= MAX_ITERATIONS || totalEnergy < ENERGY_THRESHOLD) {
+          simulationStoppedRef.current = true;
+          // Freeze all velocities
+          for (const n of nodes) {
+            n.vx = 0;
+            n.vy = 0;
+          }
+        }
+
+        needsRenderRef.current = true;
       }
 
-      ctx.restore();
+      // Only render when needed
+      if (needsRenderRef.current) {
+        render();
+        needsRenderRef.current = false;
+      }
+
       animFrameRef.current = requestAnimationFrame(simulate);
     };
 
     animFrameRef.current = requestAnimationFrame(simulate);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [hoveredNode, selectedNode]);
+  }, [render]);
 
   const getCanvasPos = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current!;
@@ -301,6 +337,7 @@ export default function GraphVisualization({ analysis }: GraphVisualizationProps
     if (isDraggingRef.current && dragNodeRef.current) {
       dragNodeRef.current.x = mx + offsetRef.current.x;
       dragNodeRef.current.y = my + offsetRef.current.y;
+      needsRenderRef.current = true;
       return;
     }
 
@@ -309,11 +346,13 @@ export default function GraphVisualization({ analysis }: GraphVisualizationProps
         x: e.clientX - panStartRef.current.x,
         y: e.clientY - panStartRef.current.y,
       };
+      needsRenderRef.current = true;
       return;
     }
 
     const node = findNodeAt(mx, my);
     setHoveredNode(node);
+    needsRenderRef.current = true;
     if (node) {
       setTooltip({ x: e.clientX, y: e.clientY });
     } else {
@@ -333,8 +372,6 @@ export default function GraphVisualization({ analysis }: GraphVisualizationProps
       node.vy = 0;
     } else {
       isPanningRef.current = true;
-      const canvas = canvasRef.current!;
-      const rect = canvas.getBoundingClientRect();
       panStartRef.current = {
         x: e.clientX - panRef.current.x,
         y: e.clientY - panRef.current.y,
@@ -342,7 +379,7 @@ export default function GraphVisualization({ analysis }: GraphVisualizationProps
     }
   }, [getCanvasPos, findNodeAt]);
 
-  const handleMouseUp = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseUp = useCallback(() => {
     if (isDraggingRef.current && dragNodeRef.current) {
       isDraggingRef.current = false;
       dragNodeRef.current = null;
@@ -354,12 +391,14 @@ export default function GraphVisualization({ analysis }: GraphVisualizationProps
     const { mx, my } = getCanvasPos(e);
     const node = findNodeAt(mx, my);
     setSelectedNode(node?.id === selectedNode?.id ? null : node);
+    needsRenderRef.current = true;
   }, [getCanvasPos, findNodeAt, selectedNode]);
 
   const handleWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     const factor = e.deltaY < 0 ? 1.1 : 0.9;
     scaleRef.current = Math.max(0.2, Math.min(4, scaleRef.current * factor));
+    needsRenderRef.current = true;
   }, []);
 
   const formatCurrency = (n: number) =>
