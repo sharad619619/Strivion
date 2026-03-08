@@ -31,7 +31,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="mb-4">
-              <img src={logo} alt="Strivion Logo" className="h-8 w-auto object-contain" />
+              <img src={logo} alt="Strivion Logo" className="h-12 w-auto object-contain" />
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               AI-powered graph analytics for detecting financial crime networks.
@@ -61,9 +61,6 @@ export default function Footer() {
         <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">
             © 2026 Strivion. All rights reserved.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            RIFT 2026 Financial Crime Detection Track
           </p>
         </div>
       </div>
