@@ -20,8 +20,8 @@ export default function HeroBackground() {
 
     let animId: number;
     const nodes: Node[] = [];
-    const nodeCount = 30;
-    const connectionDist = 150;
+    const nodeCount = 40;
+    const connectionDist = 120;
 
     const resize = () => {
       canvas.width = canvas.offsetWidth * window.devicePixelRatio;
@@ -36,24 +36,22 @@ export default function HeroBackground() {
       nodes.push({
         x: Math.random() * canvas.offsetWidth,
         y: Math.random() * canvas.offsetHeight,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        r: Math.random() * 2 + 1,
+        vx: (Math.random() - 0.5) * 0.15,
+        vy: (Math.random() - 0.5) * 0.15,
+        r: Math.random() * 2 + 1.5,
       });
     }
-
-    const isDark = () => document.documentElement.classList.contains("dark");
 
     const draw = () => {
       const w = canvas.offsetWidth;
       const h = canvas.offsetHeight;
       ctx.clearRect(0, 0, w, h);
 
-      const dark = isDark();
-      const nodeColor = dark ? "rgba(96, 165, 250, 0.3)" : "rgba(59, 130, 246, 0.15)";
-      const lineColor = dark ? "rgba(96, 165, 250, 0.08)" : "rgba(59, 130, 246, 0.06)";
+      // Very subtle soft blue colors with low opacity
+      const nodeColor = "rgba(207, 227, 255, 0.25)"; // #cfe3ff at ~25% opacity
+      const lineColor = "rgba(219, 234, 254, 0.12)"; // #dbeafe at ~12% opacity
 
-      // Update positions
+      // Update positions - very slow drift
       for (const node of nodes) {
         node.x += node.vx;
         node.y += node.vy;
@@ -61,16 +59,16 @@ export default function HeroBackground() {
         if (node.y < 0 || node.y > h) node.vy *= -1;
       }
 
-      // Draw connections
+      // Draw connections - thin lines
       ctx.strokeStyle = lineColor;
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 0.5;
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
           const dx = nodes[i].x - nodes[j].x;
           const dy = nodes[i].y - nodes[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < connectionDist) {
-            ctx.globalAlpha = 1 - dist / connectionDist;
+            ctx.globalAlpha = (1 - dist / connectionDist) * 0.15;
             ctx.beginPath();
             ctx.moveTo(nodes[i].x, nodes[i].y);
             ctx.lineTo(nodes[j].x, nodes[j].y);
@@ -79,7 +77,7 @@ export default function HeroBackground() {
         }
       }
 
-      // Draw nodes
+      // Draw nodes - small circles
       ctx.globalAlpha = 1;
       ctx.fillStyle = nodeColor;
       for (const node of nodes) {
@@ -103,7 +101,7 @@ export default function HeroBackground() {
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full pointer-events-none"
-      style={{ opacity: 0.6 }}
+      style={{ opacity: 0.5, zIndex: 0 }}
     />
   );
 }
