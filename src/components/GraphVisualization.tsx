@@ -46,6 +46,9 @@ export default function GraphVisualization({ analysis }: GraphVisualizationProps
   const scaleRef = useRef(1);
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0 });
+  const simulationStoppedRef = useRef(false);
+  const iterationRef = useRef(0);
+  const needsRenderRef = useRef(true);
 
   const isDark = theme === "dark";
 
