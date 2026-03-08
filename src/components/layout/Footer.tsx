@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/strivion-logo.png";
 
 const footerLinks = {
   Product: [

@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Shield, AlertTriangle, Moon, Sun, ArrowLeft } from "lucide-react";
+import logo from "@/assets/strivion-logo.png";
 import { useTheme } from "next-themes";
 import FileUpload from "@/components/FileUpload";
 import GraphVisualization from "@/components/GraphVisualization";
@@ -49,17 +50,9 @@ export default function Index() {
             <Link to="/" className="p-1.5 rounded-lg hover:bg-[hsl(var(--accent))] transition-colors">
               <ArrowLeft className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
             </Link>
-            <div className="p-1.5 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-xs">S</span>
-            </div>
-            <div>
-              <h1 className="text-sm font-bold tracking-tight text-[hsl(var(--foreground))]">
-                Strivion
-              </h1>
-              <p className="text-[10px] text-[hsl(var(--muted-foreground))] tracking-wider uppercase">
-                AI Financial Forensics Platform
-              </p>
-            </div>
+            <Link to="/">
+              <img src={logo} alt="Strivion Logo" className="h-12 md:h-14 w-auto object-contain" />
+            </Link>
           </div>
 
           <div className="flex items-center gap-4">
