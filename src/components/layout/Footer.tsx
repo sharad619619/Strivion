@@ -62,9 +62,6 @@ export default function Footer() {
           <p className="text-xs text-muted-foreground">
             © 2026 Strivion. All rights reserved.
           </p>
-          <p className="text-xs text-muted-foreground">
-            RIFT 2026 Financial Crime Detection Track
-          </p>
         </div>
       </div>
     </footer>

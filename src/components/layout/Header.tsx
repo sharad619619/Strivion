@@ -25,7 +25,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center">
-          <img src={logo} alt="Strivion Logo" className="h-10 w-auto object-contain" />
+          <img src={logo} alt="Strivion Logo" className="h-14 md:h-16 w-auto object-contain" />
         </Link>
 
         {/* Desktop nav */}
